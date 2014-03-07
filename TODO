@@ -1,0 +1,4 @@
+* Implement the extended BAR protocol.
+* Maintain a connection with the BAR server.
+* Port it to Windows.
+* GUI.
