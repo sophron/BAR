@@ -1,4 +1,13 @@
+Major
+=====
+
 * Implement the extended BAR protocol.
-* Maintain a connection with the BAR server.
 * Port it to Windows.
 * GUI.
+
+Minor
+=====
+
+* Maintain a connection with the BAR server.
+* Use a config file.
+* Send fix-rated packets.
