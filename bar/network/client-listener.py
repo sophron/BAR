@@ -58,8 +58,8 @@ def main():
     factory = ListenerFactory(reactor)
 
     print "Starting reactor..."
-    port = reactor.listenTCP(options.port or 4333, factory,
-                             interface=options.iface)
+    port = reactor.listenTCP(4333, factory,
+                             interface="127.0.0.1")
 
     print 'Listening on %s.' % (port.getHost())
 
