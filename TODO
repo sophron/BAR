@@ -5,6 +5,7 @@ Major
 * Port it to Windows.
 * GUI.
 * Unit testing.
+* Proxify HTTP traffic.
 
 Minor
 =====
