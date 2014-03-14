@@ -4,6 +4,7 @@ Major
 * Implement the extended BAR protocol.
 * Port it to Windows.
 * GUI.
+* Unit testing.
 
 Minor
 =====
