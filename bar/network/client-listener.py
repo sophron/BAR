@@ -4,7 +4,7 @@ from twisted.protocols import basic
 from twisted.python import log
 from Crypto.Cipher import AES
 
-class ListenerProtocol(Protocol):
+class CommunicatorProtocol(Protocol):
 
     def dataReceived(self, data):
 
@@ -46,9 +46,9 @@ class ListenerProtocol(Protocol):
     def connectionMade(self):
         self.factory.clientConnectionMade(self)
 
-class ListenerFactory(ClientFactory):
+class CommunicatorFactory(ClientFactory):
 
-    protocol = ListenerProtocol
+    protocol = CommunicatorProtocol
 
     def __init__(self, reactor):
         self.reactor = reactor
@@ -59,15 +59,14 @@ class ListenerFactory(ClientFactory):
     def send_message(self, msg):
         self.client.transport.write(msg + "\n")
 
-
-class CommunicatorProtocol(Protocol):
+class ListenerProtocol(Protocol):
 
     def dataReceived(self, data):
         self.factory.otherfactory.send_message(data)
 
-class CommunicatorFactory(ServerFactory):
+class ListenerFactory(ServerFactory):
 
-    protocol = CommunicatorProtocol
+    protocol = ListenerProtocol
 
     def __init__(self, reactor, otherfactory):
         self.reactor = reactor
@@ -77,12 +76,12 @@ def main():
 
     from twisted.internet import reactor
 
-    factory = ListenerFactory(reactor)
+    factory = CommunicatorFactory(reactor)
 
     print "Starting reactor..."
     reactor.connectTCP("localhost", 231, factory)
 
-    communicator_factory = CommunicatorFactory(reactor, factory)
+    communicator_factory = ListenerFactory(reactor, factory)
     port = reactor.listenTCP(4334, communicator_factory,
                              interface="127.0.0.1")
 
