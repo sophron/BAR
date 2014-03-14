@@ -43,13 +43,35 @@ class ListenerProtocol(Protocol):
         stream=AES.new(skey, AES.MODE_CFB, iv)
         return stream.decrypt(c)
 
+    def connectionMade(self):
+        self.factory.clientConnectionMade(self)
 
-class ListenerFactory(ServerFactory):
+class ListenerFactory(ClientFactory):
 
     protocol = ListenerProtocol
 
     def __init__(self, reactor):
         self.reactor = reactor
+
+    def clientConnectionMade(self, client):
+        self.client = client
+
+    def send_message(self, msg):
+        self.client.transport.write(msg + "\n")
+
+
+class CommunicatorProtocol(Protocol):
+
+    def dataReceived(self, data):
+        self.factory.otherfactory.send_message(data)
+
+class CommunicatorFactory(ServerFactory):
+
+    protocol = CommunicatorProtocol
+
+    def __init__(self, reactor, otherfactory):
+        self.reactor = reactor
+        self.otherfactory = otherfactory
 
 def main():
 
@@ -58,8 +80,12 @@ def main():
     factory = ListenerFactory(reactor)
 
     print "Starting reactor..."
-    port = reactor.listenTCP(4333, factory,
+    reactor.connectTCP("localhost", 231, factory)
+
+    communicator_factory = CommunicatorFactory(reactor, factory)
+    port = reactor.listenTCP(4334, communicator_factory,
                              interface="127.0.0.1")
+
 
     print 'Listening on %s.' % (port.getHost())
 
