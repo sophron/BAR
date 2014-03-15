@@ -93,7 +93,7 @@ def start_server(args):
         return
 
     print "Starting server..."
-    server_pid = start_process("bar/network/server.py")
+    server_pid = start_process("bar/network/bar-server.py")
     if server_pid:
         print "Bar server started."
 
@@ -107,7 +107,7 @@ def stop_server(args):
         return
 
     print "Stopping server..."
-    stop_process("server.py")
+    stop_process("bar-server.py")
     print "Bar server stopped."
 
 def login(args):
