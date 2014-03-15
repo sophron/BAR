@@ -96,8 +96,6 @@ class LoginFactory(protocol.ClientFactory):
     protocol = MyProtocol
     def __init__(self):
         self.clients = []
-        self.lc = task.LoopingCall(self.announce)
-        self.lc.start(2)
 
     def announce(self):
 
@@ -121,12 +119,12 @@ def genLbl():
 def send_broadcast_message(contact, message):
 
     factory = MyFactory(contact[2], message, genLbl(), contact[4])
-    reactor.connectTCP("localhost", 231, factory)
+    reactor.connectTCP("localhost", 4333, factory)
     reactor.run()
 
 def login_to_bar():
 
     factory = LoginFactory()
-    reactor.connectTCP("localhost", 231, factory)
+    reactor.connectTCP("localhost", 4333, factory)
     reactor.run()
 
