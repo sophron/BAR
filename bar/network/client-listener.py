@@ -1,13 +1,17 @@
-import optparse, os, psutil, time, zlib
+import optparse
+import os 
+import psutil
+import time
+import zlib
 from twisted.internet.protocol import ServerFactory, ClientFactory, Protocol
 from twisted.protocols import basic
 from twisted.python import log
+from twisted.internet import reactor
 from Crypto.Cipher import AES
 
 class CommunicatorProtocol(Protocol):
 
     def dataReceived(self, data):
-
         if data[:2] == "OK":
             print "Received a succesfull message from the server."
             self.factory.listener_factory.send_message(data)
@@ -51,7 +55,6 @@ class CommunicatorProtocol(Protocol):
         self.factory.clientConnectionMade(self)
 
 class CommunicatorFactory(ClientFactory):
-
     protocol = CommunicatorProtocol
 
     def __init__(self, reactor):
@@ -69,18 +72,17 @@ class CommunicatorFactory(ClientFactory):
 class ListenerProtocol(Protocol):
 
     def dataReceived(self, data):
-        self.factory.otherfactory.send_message(data)
+        self.factory.communicator_factory.send_message(data)
 
     def connectionMade(self):
         self.factory.clientConnectionMade(self)
 
 class ListenerFactory(ServerFactory):
-
     protocol = ListenerProtocol
 
-    def __init__(self, reactor, otherfactory):
+    def __init__(self, reactor, communicator_factory):
         self.reactor = reactor
-        self.otherfactory = otherfactory
+        self.communicator_factory = communicator_factory
 
     def clientConnectionMade(self, client):
         self.client = client
@@ -89,16 +91,13 @@ class ListenerFactory(ServerFactory):
         self.client.transport.write(msg + "\n")
 
 def main():
-
-    from twisted.internet import reactor
-
-    factory = CommunicatorFactory(reactor)
-    communicator_factory = ListenerFactory(reactor, factory)
-    factory.set_listener(communicator_factory)
+    communicator_factory = CommunicatorFactory(reactor)
+    listener_factory = ListenerFactory(reactor, communicator_factory)
+    communicator_factory.set_listener(listener_factory)
     print "Starting reactor..."
-    reactor.connectTCP("localhost", 231, factory)
+    reactor.connectTCP("localhost", 231, communicator_factory)
 
-    port = reactor.listenTCP(4333, communicator_factory,
+    port = reactor.listenTCP(4333, listener_factory,
                              interface="127.0.0.1")
 
     print 'Listening on %s.' % (port.getHost())
