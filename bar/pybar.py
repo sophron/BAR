@@ -4,7 +4,7 @@
 import sys, os, argparse, subprocess, signal
 import sqlite3 as lite
 from Crypto import Random
-from bar.network.client import send_broadcast_message, login_to_bar
+from bar.network.client import send_broadcast_message
 
 def parse_cli():
     '''
