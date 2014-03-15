@@ -119,7 +119,7 @@ def login(args):
     login_to_bar()
 
     print "Starting daemon..."
-    pid = start_process("bar/network/client-listener.py")
+    pid = start_process("bar/network/bar-daemon.py")
     if pid:
         print "Daemon started with pid " + str(pid) + "."
 
@@ -133,7 +133,7 @@ def logout(args):
     print "Logout succesfull!"
 
     print "Stoping daemon..."
-    stop_process("client-listener")
+    stop_process("bar-daemon")
     print "Daemon stopped."
 
 
