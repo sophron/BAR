@@ -92,21 +92,6 @@ class MyFactory(protocol.ClientFactory):
         self.clients.append(client)
         self.announce()
 
-class LoginFactory(protocol.ClientFactory):
-    protocol = MyProtocol
-    def __init__(self):
-        self.clients = []
-
-    def announce(self):
-
-        for client in self.clients:
-            self.start = time.time()
-            client.transport.write("LOGIN 4333\n")
-
-    def clientConnectionMade(self, client):
-        self.clients.append(client)
-        self.announce()
-
 def genLbl():
     '''
     Generate a new Label.
@@ -121,10 +106,3 @@ def send_broadcast_message(contact, message):
     factory = MyFactory(contact[2], message, genLbl(), contact[4])
     reactor.connectTCP("localhost", 4333, factory)
     reactor.run()
-
-def login_to_bar():
-
-    factory = LoginFactory()
-    reactor.connectTCP("localhost", 4333, factory)
-    reactor.run()
-

@@ -114,10 +114,6 @@ def login(args):
     '''
     Login to BAR server.
     '''
-
-    print "Trying to login..."
-    login_to_bar()
-
     print "Starting daemon..."
     pid = start_process("bar/network/bar-daemon.py")
     if pid:
@@ -127,11 +123,6 @@ def logout(args):
     '''
     Logout from BAR server.
     '''
-
-    print "Trying to logout..."
-    logout_from_bar()
-    print "Logout succesfull!"
-
     print "Stoping daemon..."
     stop_process("bar-daemon")
     print "Daemon stopped."
