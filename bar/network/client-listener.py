@@ -82,7 +82,7 @@ def main():
     reactor.connectTCP("localhost", 231, factory)
 
     communicator_factory = ListenerFactory(reactor, factory)
-    port = reactor.listenTCP(4334, communicator_factory,
+    port = reactor.listenTCP(4333, communicator_factory,
                              interface="127.0.0.1")
 
 
