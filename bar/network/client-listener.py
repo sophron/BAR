@@ -8,6 +8,10 @@ class CommunicatorProtocol(Protocol):
 
     def dataReceived(self, data):
 
+        if data[:2] == "OK":
+            print "Received a succesfull message from the server."
+            self.factory.listener_factory.send_message(data)
+
         splitdata = data.split("|||")
         label = splitdata[0]
 
@@ -53,6 +57,9 @@ class CommunicatorFactory(ClientFactory):
     def __init__(self, reactor):
         self.reactor = reactor
 
+    def set_listener(self, listener_factory):
+        self.listener_factory = listener_factory
+
     def clientConnectionMade(self, client):
         self.client = client
 
@@ -64,6 +71,9 @@ class ListenerProtocol(Protocol):
     def dataReceived(self, data):
         self.factory.otherfactory.send_message(data)
 
+    def connectionMade(self):
+        self.factory.clientConnectionMade(self)
+
 class ListenerFactory(ServerFactory):
 
     protocol = ListenerProtocol
@@ -72,19 +82,24 @@ class ListenerFactory(ServerFactory):
         self.reactor = reactor
         self.otherfactory = otherfactory
 
+    def clientConnectionMade(self, client):
+        self.client = client
+
+    def send_message(self, msg):
+        self.client.transport.write(msg + "\n")
+
 def main():
 
     from twisted.internet import reactor
 
     factory = CommunicatorFactory(reactor)
-
+    communicator_factory = ListenerFactory(reactor, factory)
+    factory.set_listener(communicator_factory)
     print "Starting reactor..."
     reactor.connectTCP("localhost", 231, factory)
 
-    communicator_factory = ListenerFactory(reactor, factory)
     port = reactor.listenTCP(4333, communicator_factory,
                              interface="127.0.0.1")
-
 
     print 'Listening on %s.' % (port.getHost())
 
