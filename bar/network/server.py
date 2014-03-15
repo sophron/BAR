@@ -104,7 +104,7 @@ def main():
     factory = PoetryFactory(reactor)
 
     port = reactor.listenTCP(options.port or 231, factory,
-                             interface="127.0.0.1")
+                             interface=socket.gethostbyaddr(socket.gethostbyname(socket.gethostname()))[2][0])
 
     print 'Serving on %s.' % (port.getHost())
     reactor.run()
