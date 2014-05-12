@@ -4,45 +4,64 @@ import psutil
 import time
 import zlib
 import sys
+import re
+import socket
 import sqlite3 as lite
 from twisted.internet.protocol import ServerFactory, ClientFactory, Protocol
+from twisted.protocols.basic import LineReceiver, NetstringReceiver
 from twisted.protocols import basic
 from twisted.python import log
 from twisted.internet import reactor
-from Crypto.Cipher import AES
+from bar.pybar import send_message
+import bar.common.label as label
+import bar.common.aes as aes
 
-class CommunicatorProtocol(Protocol):
+HIDDEN_CLIENT = 1
+HIDDEN_SERVICE = 0
+HIDDEN_SERVICE_PORT = 80
 
-    def dataReceived(self, data):
+class CommunicatorProtocol(NetstringReceiver):
+
+    def stringReceived(self, data):
         if data[:2] == "OK":
             print "Received a succesfull message from the server."
-            self.factory.listener_factory.send_message(data)
+            return
+
         splitdata = data.split("|||")
-        label = splitdata[0]
+        retr_label = splitdata[0]
         con = lite.connect('bar/db/bar.db')
         with con:
             cur = con.cursor() 
-            cur.execute("SELECT * FROM contacts WHERE label=:label", {"label":label})
+            cur.execute("SELECT * FROM contacts WHERE label=:label", {"label":retr_label})
             row = cur.fetchone()
-            if row != None:
+            if not "BAR" in data: #FIXME
+                if not row:
+                    print "Couldn't find the retrieved label. Rejecting the message."
+                    return
                 start = time.time()
                 encrypted = splitdata[1]
-                cleartext = self.AESdecrypt(row[4], encrypted)
+                cleartext = aes.aes_decrypt(row[4], encrypted)
                 newlabel = cleartext.split("|||")[0]
-                cur.execute("INSERT INTO messages(message) VALUES(?);", (cleartext.split("|||")[1].decode('ascii'),))
-                cur.execute("UPDATE contacts SET label=? WHERE label=?", (newlabel, label))
-            else:
-                print "Couldn't find the retrieved label. Rejecting the message."
+                message = cleartext.split("|||")[1]
 
-    def AESdecrypt(self, skey, c):
-        '''
-        Decrypt given message with shared key.
-        '''
-        iv = '\x00' * 16
-        stream=AES.new(skey, AES.MODE_CFB, iv)
-        return stream.decrypt(c)
+                if HIDDEN_CLIENT:
+                    if self.factory.listener_factory:
+                        self.factory.listener_factory.send_message(message)
+                        self.factory.listener_factory.client.transport.loseConnection()
+                    cur.execute("UPDATE contacts SET label=? WHERE label=?", (newlabel, retr_label))
+
+                if HIDDEN_SERVICE:
+                    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    s.connect(('localhost', HIDDEN_SERVICE_PORT))
+                    s.send(message)
+                    data = s.recv(2048)
+                    s.close()
+                    more_new_label = label.gen_lbl()
+                    cur.execute("UPDATE contacts SET label=? WHERE label=?", (more_new_label, retr_label))
+                    self.factory.transmitDataBackToClient(newlabel, row[4], more_new_label, data)
 
     def connectionMade(self):
+        print "Succeed."
         self.factory.clientConnectionMade(self)
 
 class CommunicatorFactory(ClientFactory):
@@ -58,13 +77,35 @@ class CommunicatorFactory(ClientFactory):
         self.client = client
 
     def send_message(self, msg):
-        self.client.transport.write(msg + "\n")
+        print "Sending..."
+        self.client.sendString(msg)
 
-class ListenerProtocol(Protocol):
+    def transmitDataBackToClient(self, label, sharedkey, newlabel, message):
+        self.send_message("BROADCAST " + str(label) + "|||" + aes.aes_encrypt(sharedkey, str(newlabel) + "|||" + str(message)) + "|||")
+
+
+class ListenerProtocol(NetstringReceiver):
 
     def dataReceived(self, data):
-        self.factory.communicator_factory.send_message(data)
-        self.transport.loseConnection()
+
+        host = re.findall(r"Host: (?P<value>.*?)\r\n", data)[0]
+        con = lite.connect('bar/db/bar.db')
+        with con:
+            cur = con.cursor() 
+            cur.execute("SELECT * FROM contacts WHERE name=:name", {"name": host})
+            contact = cur.fetchone() 
+
+        newlabel = label.gen_lbl()
+
+        if contact:
+            self.factory.communicator_factory.transmitDataBackToClient(contact[2], contact[4], newlabel, data)
+
+            with con:
+                cur = con.cursor() 
+                cur.execute("UPDATE contacts SET label=? WHERE label=?", (newlabel, contact[2]))
+        
+        if con:
+            con.close()
 
     def connectionMade(self):
         self.factory.clientConnectionMade(self)
@@ -80,7 +121,7 @@ class ListenerFactory(ServerFactory):
         self.client = client
 
     def send_message(self, msg):
-        self.client.transport.write(msg + "\n")
+        self.client.transport.write(msg)
 
 def main():
     communicator_factory = CommunicatorFactory(reactor)
