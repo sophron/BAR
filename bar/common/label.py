@@ -1,6 +1,6 @@
 from Crypto import Random
 
-def genLbl(self):
+def gen_lbl():
     '''
     Generate a new Label.
     '''
