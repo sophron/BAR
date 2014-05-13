@@ -8,4 +8,8 @@ class Message:
 
     def decrypt(self, sharedkey):
         self.cleartext_payload = aes.aes_decrypt(sharedkey, self.encrypted_payload) 
-        self.new_label, self.cleartext_msg = self.cleartext_payload.split("|||")
+        self.val_label, self.new_label, self.cleartext_msg = self.cleartext_payload.split("|||")
+
+    def validate(self):
+        if self.val_label == self.label:
+            return 1

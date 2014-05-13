@@ -33,23 +33,26 @@ class CommunicatorProtocol(NetstringReceiver):
         if "BAR" in data:
             return 1
 
+    def received_welcome(self, data):
+        print "Received welcome messsage from the BAR server."
+
     def check_ok(self, data):
         if data[:2] == "OK":
             return 1
 
-    def check_broadcast(self, data):
-        return 1
-
-    def received_welcome(self, data):
-        print "Received welcome messsage from the BAR server."
-
     def received_ok(self, data):
         print "Received OK message from the BAR server."
+
+    def check_broadcast(self, data):
+        return 1
 
     def received_broadcast(self, data):
             message = Message(data)
             row = db.select_entry("label", message.label)
             message.decrypt(row[4])
+            if not message.validate():
+                print "Received an invalid message."
+                return
             if HIDDEN_CLIENT:
                 if self.factory.listener_factory:
                     self.factory.listener_factory.send_message(message.cleartext_msg)
@@ -64,7 +67,6 @@ class CommunicatorProtocol(NetstringReceiver):
                 more_new_label = label.gen_lbl()
                 db.update_entry("label", retr_label, "label", more_new_label)
                 self.factory.transmitDataBackToClient(message.new_label, row[4], more_new_label, data)
-
 
     def stringReceived(self, data):
         for op in self.operations:
@@ -93,8 +95,7 @@ class CommunicatorFactory(ClientFactory):
         self.client.sendString(msg)
 
     def transmitDataBackToClient(self, label, sharedkey, newlabel, message):
-        self.send_message("BROADCAST " + str(label) + "|||" + aes.aes_encrypt(sharedkey, str(newlabel) + "|||" + str(message)))
-
+        self.send_message("BROADCAST " + str(label) + "|||" + aes.aes_encrypt(sharedkey, str(label) + "|||" + str(newlabel) + "|||" + str(message)))
 
 class ListenerProtocol(NetstringReceiver):
 
