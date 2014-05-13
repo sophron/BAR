@@ -66,7 +66,7 @@ class CommunicatorProtocol(NetstringReceiver):
                 s.close()
                 more_new_label = label.gen_lbl()
                 db.update_entry("label", retr_label, "label", more_new_label)
-                self.factory.transmitDataBackToClient(message.new_label, row[4], more_new_label, data)
+                self.factory.send_broadcast_request(message.new_label, row[4], more_new_label, data)
 
     def stringReceived(self, data):
         for op in self.operations:
@@ -94,8 +94,11 @@ class CommunicatorFactory(ClientFactory):
         print "Sending..."
         self.client.sendString(msg)
 
-    def transmitDataBackToClient(self, label, sharedkey, newlabel, message):
-        self.send_message("BROADCAST " + str(label) + "|||" + aes.aes_encrypt(sharedkey, str(label) + "|||" + str(newlabel) + "|||" + str(message)))
+    def send_broadcast_request(self, label, sharedkey, newlabel, message):
+        self.send_message("BROADCAST " + str(label) + "|||" \
+                         + aes.aes_encrypt(sharedkey, str(label) \
+                         + "|||" + str(newlabel) \
+                         + "|||" + str(message)))
 
 class ListenerProtocol(NetstringReceiver):
 
@@ -104,7 +107,7 @@ class ListenerProtocol(NetstringReceiver):
         contact = db.select_entry("name", host)
         newlabel = label.gen_lbl()
         if contact:
-            self.factory.communicator_factory.transmitDataBackToClient(contact[2], contact[4], newlabel, data)
+            self.factory.communicator_factory.send_broadcast_request(contact[2], contact[4], newlabel, data)
             db.update_entry("label", contact[2], "label", newlabel)
 
     def connectionMade(self):
