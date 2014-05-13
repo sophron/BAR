@@ -13,6 +13,7 @@ from twisted.protocols import basic
 from twisted.python import log
 from twisted.internet import reactor
 from bar.pybar import send_message
+from bar.common.message import Message
 import bar.common.label as label
 import bar.common.aes as aes
 import bar.common.db as db
@@ -27,34 +28,27 @@ class CommunicatorProtocol(NetstringReceiver):
         if data[:2] == "OK":
             print "Received a succesfull message from the server."
             return
-        splitdata = data.split("|||")
-        retr_label = splitdata[0]
-        row = db.select_entry("label", retr_label)
-        if not "BAR" in data: #FIXME
-            if not row:
-                print "Couldn't find the retrieved label. Rejecting the message."
-                return
-            start = time.time()
-            encrypted = splitdata[1]
-            cleartext = aes.aes_decrypt(row[4], encrypted)
-            newlabel = cleartext.split("|||")[0]
-            message = cleartext.split("|||")[1]
+        if "BAR" in data:
+            return
 
-            if HIDDEN_CLIENT:
-                if self.factory.listener_factory:
-                    self.factory.listener_factory.send_message(message)
-                    self.factory.listener_factory.client.transport.loseConnection()
-                    db.update_entry("label", retr_label, "label", newlabel)
+        message = Message(data)
+        row = db.select_entry("label", message.label)
+        message.decrypt(row[4])
 
-            if HIDDEN_SERVICE:
-                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                s.connect(('localhost', HIDDEN_SERVICE_PORT))
-                s.send(message)
-                data = s.recv(2048)
-                s.close()
-                more_new_label = label.gen_lbl()
-                db.update_entry("label", retr_label, "label", more_new_label)
-                self.factory.transmitDataBackToClient(newlabel, row[4], more_new_label, data)
+        if HIDDEN_CLIENT:
+            if self.factory.listener_factory:
+                self.factory.listener_factory.send_message(message.cleartext_msg)
+                self.factory.listener_factory.client.transport.loseConnection()
+                db.update_entry("label", message.label, "label", message.new_label)
+        if HIDDEN_SERVICE:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect(('localhost', HIDDEN_SERVICE_PORT))
+            s.send(message.cleartext_msg)
+            data = s.recv(2048)
+            s.close()
+            more_new_label = label.gen_lbl()
+            db.update_entry("label", retr_label, "label", more_new_label)
+            self.factory.transmitDataBackToClient(message.new_label, row[4], more_new_label, data)
 
     def connectionMade(self):
         print "Succeed."
@@ -77,7 +71,7 @@ class CommunicatorFactory(ClientFactory):
         self.client.sendString(msg)
 
     def transmitDataBackToClient(self, label, sharedkey, newlabel, message):
-        self.send_message("BROADCAST " + str(label) + "|||" + aes.aes_encrypt(sharedkey, str(newlabel) + "|||" + str(message)) + "|||")
+        self.send_message("BROADCAST " + str(label) + "|||" + aes.aes_encrypt(sharedkey, str(newlabel) + "|||" + str(message)))
 
 
 class ListenerProtocol(NetstringReceiver):
