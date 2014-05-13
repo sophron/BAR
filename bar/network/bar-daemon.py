@@ -24,31 +24,53 @@ HIDDEN_SERVICE_PORT = 80
 
 class CommunicatorProtocol(NetstringReceiver):
 
-    def stringReceived(self, data):
-        if data[:2] == "OK":
-            print "Received a succesfull message from the server."
-            return
+    operations = ["welcome", "ok", "broadcast"]
+
+    def caller(self, func, args):
+        return getattr(self, func)(args) 
+
+    def check_welcome(self, data):
         if "BAR" in data:
-            return
+            return 1
 
-        message = Message(data)
-        row = db.select_entry("label", message.label)
-        message.decrypt(row[4])
+    def check_ok(self, data):
+        if data[:2] == "OK":
+            return 1
 
-        if HIDDEN_CLIENT:
-            if self.factory.listener_factory:
-                self.factory.listener_factory.send_message(message.cleartext_msg)
-                self.factory.listener_factory.client.transport.loseConnection()
-                db.update_entry("label", message.label, "label", message.new_label)
-        if HIDDEN_SERVICE:
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect(('localhost', HIDDEN_SERVICE_PORT))
-            s.send(message.cleartext_msg)
-            data = s.recv(2048)
-            s.close()
-            more_new_label = label.gen_lbl()
-            db.update_entry("label", retr_label, "label", more_new_label)
-            self.factory.transmitDataBackToClient(message.new_label, row[4], more_new_label, data)
+    def check_broadcast(self, data):
+        return 1
+
+    def received_welcome(self, data):
+        print "Received welcome messsage from the BAR server."
+
+    def received_ok(self, data):
+        print "Received OK message from the BAR server."
+
+    def received_broadcast(self, data):
+            message = Message(data)
+            row = db.select_entry("label", message.label)
+            message.decrypt(row[4])
+            if HIDDEN_CLIENT:
+                if self.factory.listener_factory:
+                    self.factory.listener_factory.send_message(message.cleartext_msg)
+                    self.factory.listener_factory.client.transport.loseConnection()
+                    db.update_entry("label", message.label, "label", message.new_label)
+            if HIDDEN_SERVICE:
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.connect(('localhost', HIDDEN_SERVICE_PORT))
+                s.send(message.cleartext_msg)
+                data = s.recv(2048)
+                s.close()
+                more_new_label = label.gen_lbl()
+                db.update_entry("label", retr_label, "label", more_new_label)
+                self.factory.transmitDataBackToClient(message.new_label, row[4], more_new_label, data)
+
+
+    def stringReceived(self, data):
+        for op in self.operations:
+            if self.caller("check_" + op, data):
+                self.caller("received_" + op, data)
+                return
 
     def connectionMade(self):
         print "Succeed."
