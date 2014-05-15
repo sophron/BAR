@@ -6,32 +6,35 @@ import sys
 import sqlite3 as lite
 from twisted.internet import defer, reactor
 from twisted.internet.protocol import ServerFactory, ClientFactory, Protocol
+from twisted.protocols.basic import LineReceiver, NetstringReceiver
 from twisted.protocols import basic
 
 clients = []
 
-class BARServerProtocol(Protocol):
+class BARServerProtocol(NetstringReceiver):
 
     def connectionMade(self):
         clients.append(self)
-        self.transport.write("=== BAR Server ===\n")
+        self.sendString("=== BAR Server ===")
 
-    def dataReceived(self, data):
+    def stringReceived(self, data):
         if data[:9] == "BROADCAST":
             self.broadcast(data)
         elif data[:4] == "QUIT":    
             self.close_connection()
         else:
-            self.transport.write("I can break rules too.\n")
+            self.sendString("I can break rules too.")
 
     def broadcast(self, data):
         if len(data) <= 11:
-            self.transport.write("Ok, but where's the message to broadcast?\n")
+            self.sendString("Ok, but where's the message to broadcast?")
         else:
             message = data[10:]
+	    print "Starting broadcast from: " + self.transport.getPeer().host
             for client in clients:
-                client.transport.write(message)
-            self.transport.write("OK\n")
+		if self.transport.getPeer().host != client.transport.getPeer().host:
+                	client.sendString(message)
+            self.sendString("OK")
 
     def close_connection(self):
         self.transport.loseConnection()
@@ -42,14 +45,11 @@ class BARServerProtocol(Protocol):
 class BARServerFactory(ServerFactory):
     protocol = BARServerProtocol
 
-    def __init__(self):
-        pass
-
 def main():
     factory = BARServerFactory()
     port = reactor.listenTCP(231, factory,
                              #interface=socket.gethostbyaddr(socket.gethostbyname(socket.gethostname()))[2][0])
-                            interface='localhost')
+                            interface='192.168.1.2')
     print 'Serving on %s.' % (port.getHost())
     reactor.run()
 
