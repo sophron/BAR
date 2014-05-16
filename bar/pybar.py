@@ -66,9 +66,9 @@ def start_process(path, args):
     Runs a background process (daemon).
     '''
 
-    daemon = subprocess.Popen([sys.executable, path, "--name", args.name, "--role", args.role])#, 
-                                #stdout=subprocess.PIPE, 
-                                #stderr=subprocess.STDOUT)
+    daemon = subprocess.Popen([sys.executable, path, "--name", args.name, "--role", args.role], 
+                                stdout=subprocess.PIPE, 
+                                stderr=subprocess.STDOUT)
 
     return daemon.pid
 
