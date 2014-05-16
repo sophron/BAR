@@ -1,4 +1,7 @@
-import optparse
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+import argparse
 import os 
 import psutil
 import time
@@ -18,10 +21,6 @@ from bar.common.message import Message
 import bar.common.label as label
 import bar.common.aes as aes
 import bar.common.db as db
-
-HIDDEN_CLIENT = 1
-HIDDEN_SERVICE = 0
-HIDDEN_SERVICE_PORT = 80
 
 class CommunicatorProtocol(NetstringReceiver):
 
@@ -58,17 +57,18 @@ class CommunicatorProtocol(NetstringReceiver):
                 print "Received an invalid message."
                 return
             print "Found label: " + message.label
-            if HIDDEN_CLIENT:
+            if self.factory.role == "hidden-client":
                 if self.factory.listener_factory:
                     self.factory.listener_factory.send_message(message.cleartext_msg)
                     self.factory.listener_factory.client.transport.loseConnection()
-                    #db.update_entry("label", message.label, "label", message.new_label)
-                    db.insert_entry("foo6", message.new_label, row[4])
-            if HIDDEN_SERVICE:
+                    db.insert_entry(self.factory.name, message.new_label, row[4])
+            else:
+                if self.factory.role == "proxy":
+                    message.cleartext_msg = re.sub(r'CONNECT (?P<value>.*?) HTTP/1.0\r\n', 'CONNECT localhost HTTP/1.0\r\n', message.cleartext_msg)
                 socks_client_factory = HTTPClientFactory(reactor, message)
                 socks_client_factory.set_communicator(self)
                 reactor.connectTCP("localhost", 4333, socks_client_factory)
-                db.insert_entry("foo6", message.new_label, row[4])
+                db.insert_entry(self.factory.name, message.new_label, row[4])
 
     def stringReceived(self, data):
         for op in self.operations:
@@ -83,8 +83,10 @@ class CommunicatorProtocol(NetstringReceiver):
 class CommunicatorFactory(ClientFactory):
     protocol = CommunicatorProtocol
 
-    def __init__(self, reactor):
+    def __init__(self, reactor, name, role):
         self.reactor = reactor
+        self.name = name
+        self.role = role
 
     def set_listener(self, listener_factory):
         self.listener_factory = listener_factory
@@ -105,7 +107,7 @@ class CommunicatorFactory(ClientFactory):
 class ListenerProtocol(Protocol):
 
     def dataReceived(self, data):
-        contact = db.select_entry("name", "foo6")
+        contact = db.select_entry("name", self.factory.communicator_factory.name)
         newlabel = label.gen_lbl()
         if contact:
             self.factory.communicator_factory.send_broadcast_request(contact[2], contact[4], newlabel, data)
@@ -132,7 +134,7 @@ class ListenerFactory(ServerFactory):
 class HTTPClientProtocol(Protocol):
 
     def dataReceived(self, data):
-        contact = db.select_entry("name", "foo6")
+        contact = db.select_entry("name", self.factory.communicator_factory.factory.name)
         more_new_label = label.gen_lbl()
         self.factory.communicator_factory.factory.send_broadcast_request(self.factory.message.label, contact[4], more_new_label, data)
 
@@ -157,13 +159,22 @@ class ProxyFactory(http.HTTPFactory):
 	protocol = proxy.Proxy
 
 def main():
-    communicator_factory = CommunicatorFactory(reactor)
-    if HIDDEN_CLIENT: 
+
+    parser = argparse.ArgumentParser(description='bar-daemon')
+    parser.add_argument('--name', default=False, help='Label of contact')
+    parser.add_argument('--role', default=False, help='Role of client')
+    args = parser.parse_args()
+    if not args.name:
+        print "You need to define a name with --name option."
+        sys.exit()
+
+    communicator_factory = CommunicatorFactory(reactor, args.name, args.role)
+    if args.role == "hidden-client": 
         listener_factory = ListenerFactory(reactor, communicator_factory)
         communicator_factory.set_listener(listener_factory)
         port = reactor.listenTCP(4333, listener_factory,
                                  interface="127.0.0.1")
-    elif HIDDEN_SERVICE:
+    else:
         port = reactor.listenTCP(4333, ProxyFactory())
 
     print "Starting reactor..."

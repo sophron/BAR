@@ -21,3 +21,13 @@ def select_entry(where_field, where_value):
     if con:
         con.close()
     return row
+
+def insert_entry(name, label, sharedkey):
+    con = lite.connect('bar/db/bar.db')
+    with con:
+        cur = con.cursor()
+        query = "INSERT INTO contacts(name, label, sharedkey) VALUES('%s', '%s', '%s')"  \
+                % (name, label, sharedkey)
+        cur.execute(query)
+    if con:
+        con.close()

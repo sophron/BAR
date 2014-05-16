@@ -21,7 +21,10 @@ def parse_cli():
     messages_parser = subparsers.add_parser('messages', help='Subparser for messages.')
     server_parser = subparsers.add_parser('server', help='Subparser for a BAR server.')
     login_parser = subparsers.add_parser('login', help='Subparser for logging in to a BAR server.')
-    login_parser = subparsers.add_parser('logout', help='Subparser for logging out from the BAR server.')
+    logout_parser = subparsers.add_parser('logout', help='Subparser for logging out from the BAR server.')
+
+    login_parser.add_argument('--name', default=False, help='Name of contact')
+    login_parser.add_argument('--role', default=False, help='Role of BAR client')
 
     subparsers = server_parser.add_subparsers(help='sub-command help', dest='server_operation')
 
@@ -58,14 +61,14 @@ def parse_cli():
 
     return parser
 
-def start_process(path):
+def start_process(path, args):
     '''
     Runs a background process (daemon).
     '''
 
-    daemon = subprocess.Popen([sys.executable, path], 
-                                stdout=subprocess.PIPE, 
-                                stderr=subprocess.STDOUT)
+    daemon = subprocess.Popen([sys.executable, path, "--name", args.name, "--role", args.role])#, 
+                                #stdout=subprocess.PIPE, 
+                                #stderr=subprocess.STDOUT)
 
     return daemon.pid
 
@@ -114,8 +117,18 @@ def login(args):
     '''
     Login to BAR server.
     '''
+
+    if not args.name:
+        print "You need to specify a name with --name."
+        return
+
+    if args.role not in ("hidden-service", "hidden-client", "proxy"):
+        print "role has to be either 'hidden-service' or 'hidden-client' or 'proxy'"
+        return
+
     print "Starting daemon..."
-    pid = start_process("bar/network/bar-daemon.py")
+
+    pid = start_process("bar/network/bar-daemon.py", args)
     if pid:
         print "Daemon started with pid " + str(pid) + "."
 
@@ -123,6 +136,7 @@ def logout(args):
     '''
     Logout from BAR server.
     '''
+
     print "Stoping daemon..."
     stop_process("bar-daemon")
     print "Daemon stopped."
