@@ -52,6 +52,7 @@ class CommunicatorProtocol(NetstringReceiver):
             row = db.select_entry("label", message.label)
             if not row:
                 print "Can't find this label: " + message.label
+                return 
             message.decrypt(row[4])
             if not message.validate():
                 print "Received an invalid message."
@@ -178,7 +179,7 @@ def main():
         port = reactor.listenTCP(4333, ProxyFactory())
 
     print "Starting reactor..."
-    reactor.connectTCP("192.168.1.2", 231, communicator_factory)
+    reactor.connectTCP("x.x.x.x", 231, communicator_factory)
     print 'Listening on %s.' % (port.getHost())
     reactor.run()
 
