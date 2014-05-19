@@ -5,6 +5,7 @@ import sys, os, argparse, subprocess, signal
 import sqlite3 as lite
 from Crypto import Random
 from bar.network.client import send_broadcast_message
+from bar.network.bar_daemon import daemon_main
 
 def parse_cli():
     '''
@@ -66,9 +67,9 @@ def start_process(path, args):
     Runs a background process (daemon).
     '''
 
-    daemon = subprocess.Popen([sys.executable, path, "--name", args.name, "--role", args.role], 
-                                stdout=subprocess.PIPE, 
-                                stderr=subprocess.STDOUT)
+    daemon = subprocess.Popen([sys.executable, path, "--name", args.name, "--role", args.role])#, 
+                                #stdout=subprocess.PIPE, 
+                                #stderr=subprocess.STDOUT)
 
     return daemon.pid
 
@@ -96,6 +97,7 @@ def start_server(args):
         return
 
     print "Starting server..."
+
     server_pid = start_process("bar/network/bar-server.py")
     if server_pid:
         print "Bar server started."
@@ -127,10 +129,12 @@ def login(args):
         return
 
     print "Starting daemon..."
+    
+    daemon_main(args.name, args.role)
 
-    pid = start_process("bar/network/bar-daemon.py", args)
-    if pid:
-        print "Daemon started with pid " + str(pid) + "."
+    #pid = start_process("bar/network/bar-daemon.py", args)
+    #if pid:
+    #    print "Daemon started with pid " + str(pid) + "."
 
 def logout(args):
     '''

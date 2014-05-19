@@ -3,7 +3,6 @@
 
 import argparse
 import os 
-import psutil
 import time
 import zlib
 import sys
@@ -16,7 +15,6 @@ from twisted.protocols import basic
 from twisted.web import proxy, http
 from twisted.python import log
 from twisted.internet import reactor
-from bar.pybar import send_message
 from bar.common.message import Message
 import bar.common.label as label
 import bar.common.aes as aes
@@ -159,18 +157,18 @@ class HTTPClientFactory(ClientFactory):
 class ProxyFactory(http.HTTPFactory):
 	protocol = proxy.Proxy
 
-def main():
+def daemon_main(name, role):
 
-    parser = argparse.ArgumentParser(description='bar-daemon')
-    parser.add_argument('--name', default=False, help='Label of contact')
-    parser.add_argument('--role', default=False, help='Role of client')
-    args = parser.parse_args()
-    if not args.name:
-        print "You need to define a name with --name option."
-        sys.exit()
+    #parser = argparse.ArgumentParser(description='bar-daemon')
+    #parser.add_argument('--name', default=False, help='Label of contact')
+    #parser.add_argument('--role', default=False, help='Role of client')
+    #args = parser.parse_args()
+    
+    #name = name or args.name
+    #role = role or args.role    
 
-    communicator_factory = CommunicatorFactory(reactor, args.name, args.role)
-    if args.role == "hidden-client": 
+    communicator_factory = CommunicatorFactory(reactor, name, role)
+    if role == "hidden-client": 
         listener_factory = ListenerFactory(reactor, communicator_factory)
         communicator_factory.set_listener(listener_factory)
         port = reactor.listenTCP(4333, listener_factory,
@@ -179,9 +177,9 @@ def main():
         port = reactor.listenTCP(4333, ProxyFactory())
 
     print "Starting reactor..."
-    reactor.connectTCP("x.x.x.x", 231, communicator_factory)
+    reactor.connectTCP("199.19.117.60", 231, communicator_factory)
     print 'Listening on %s.' % (port.getHost())
     reactor.run()
 
 if __name__ == '__main__':
-    main()
+    daemon_main()
