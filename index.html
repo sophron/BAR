@@ -1,0 +1,183 @@
+<html>
+<head>
+<style>
+
+body {
+    background-color: #f7f7f7;
+}
+
+h1 {
+    font-family: 'Ubuntu',sans-serif;
+    font-weight: 700;
+    color: #383838;
+    font-size: 200%;
+    margin-bottom: 50px;
+}
+
+h3 {
+    font-family: 'Ubuntu',sans-serif;
+    font-weight: 700;
+    color: #383838;
+}
+
+p, li {
+    font-family: "Helvetica Neue","Helvetica",Arial,sans-serif;
+    font-size: 16px;
+    color: #646464;
+}
+
+#content {
+    line-height: 140%;
+    margin-left: auto;
+    margin-right: auto;
+    width: 810px;
+    padding: 30px 40px 40px 40px;
+    text-align: justify;
+    background-color: #fff;
+    min-height: 400px;
+    border: 2px solid #ebebeb;
+    -webkit-border-radius: 6px;
+    -moz-border-radius: 6px;
+    border-radius: 6px;
+}
+
+#content h1, img {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+}
+
+#content img {
+    padding-top: 15px;
+    padding-bottom: 50px;
+}
+
+</style>
+</head>
+<body>
+<div id="wrapper">
+    <div id="content">
+        <div id="header"><img src="bar-logo-2.png"></img></div>
+        <h1>Explaining Broadcast Anonymous Routing (BAR) in 5'</h1>
+        <h3>What is Broadcast Anonymous Routing?</h3>
+        <p>Broadcast Anonymous Routing (BAR) is a system that provides strong
+        anonymity for both the sender and the receiver of a message. In addition to
+        that, it makes it difficult for other parties to distinguish if BAR users are
+        actually communicating or not! These anonymity properties are not possible
+        through other anonymous channels based only on traditional onion routing.
+        However, communication through the BAR requires from the users more bandwidth
+        than traditional anonymous communication systems.</p>
+
+        <h3>Can you explain broadcast anonymity in a simple manner?</h3>
+        <p>Imagine Alice and Bob sitting in a crowded bar. Apart from Alice and
+        Bob there are people standing between them and having their drinks. The
+        bartender is willing to serve everyone around.
+
+        Alice wants to communicate anonymously with Bob. She doesn't want anybody in the
+        bar to know that she communicated with Bob and of course to hide the contents of
+        her message. She can't just go there and talk to him because everyone will
+        notice.</p>
+                
+        <p>What can Alice do?</p>
+        <img src="bar1.png"></img>
+        <h3>What can she do?</h3>
+
+        <p>Alice writes a message for every customer in the bar and puts each
+        message to a different envelop. Only Bob's message is real; all the other are
+        "dummy" messages. She then hands the envelopes to the bartender along with
+        specific directions.  </p>
+
+        <img src="bar2.png"></img>
+
+        <h3>What happens next?</h3>
+
+        <p>Everybody will read a dummy message from Alice, except from Bob, the actual
+        receiver.</p>
+
+        <p>Now people will be able to see that Alice communicated with someone in the
+        bar, but they cannot deduce that Bob was the actual receiver. Everyone got a
+        message from Alice! Even the bartender himself cannot tell who the receiver is.
+        Users can find the actual receiver, unless all of them cooperate to find this.
+        That's it, Bob is an anonymous receiver!</p>
+
+        <img src="bar3.png"></img>
+
+        <h3>OK, I can see that Bob is anonymous, but I don't think that Alice really is.</h3>
+
+        <p>BAR utilizes a couple of improvements in the basic version, to make
+        Alice (the sender) anonymous. In the actual BAR protocol, Alice uses a random
+        path of users, in order to handoff the message to the user for broadcasting. All
+        the users have random keys in order to hide the routing path of Alice to the
+        bartender (imagine something like Tor, with public keys dynamically updated for
+        each user during his next login).</p>
+
+        <h3>You said that others cannot even distinguish if Alice (and Bob) are actually communicating or not.</h3>
+
+        <p>This is an advanced anonymity property known as sender-receiver
+        anonymity. BAR achieves this because all BAR users are programmed to
+        continuously handoff messages of constant length and size and at constant time
+        slots to the bartender (the broadcast server). If some users do not want to
+        communicate at a giver slot, they will simply handoff to the bartender fake
+        messages of the proper length.  In this way, no one can tell if users of the
+        system are actually communicating or not!</p>
+
+        <h3>Ok i think i got it but it is kind of messy with a lot of broadcast messages send and received. Will it work in computer networks?</h3>
+
+        <p>We need a BAR server acting as the bartender to broadcast messages to others,
+        in the network.</p>
+
+        <p>Alice will not actually handoff a different message in each slot but the same
+        message is forwarded to the BAR server. Before sending the message, she encrypts
+        it with an AES key shared with Bob, so that only Bob can decrypt.</p>
+
+        <p>She also shares a secret label with Bob and she appends this label to the
+        message. Now the receivers don't have to decrypt each broadcast message; each
+        user checks the non-encrypted label to filter if the message is intended for
+        them, before actually attempting decryption! Messages with unkown labels are
+        simply dropped by each receiver. Note that each label is for one use only and it
+        is updated within each exchanged encrypted message.</p>
+
+        <img src="bar4.png"></img>
+
+        <h3>That's nice, but I can still think of some problems. How many users can a BAR server handle?</h3>
+        <p>In the basic version of the BAR protocol, there are several limitations
+        like:</p>
+
+            <ul> <li>A system with a single BAR server can only handle up to some
+        hundreds of users. We need more BARs if the number of users exceeds a
+        limit. We also need a way to make users from different BARs to
+        communicate with each other.</li> <li>The system is not distributed. The BAR
+        server is a single point of failure.</li> <li>If the BAR server is curious and
+        it cooperates with one endpoint that is also curious, they can expose the other
+        endpoint.</li> </ul> <p>We are aware of these issues. Please note that most of
+        them have been tackled in the extended BAR protocol published in the BAR
+        paper.</p>
+        <h3>How does BAR differs from other anonymity networks like Tor or I2P?</h3>
+        <p>BAR has its advantages and disadvantages in comparison with other
+        well-known anonymity networks. BAR provides stronger anonymity and is effective
+        against a passive global adversary that performs some powerful attacks, like
+        brute force or timing attacks while the other low-latency networks are not. It
+        is also relatively easy to set up and deploy your own anonymous system using BAR
+        since the broadcast mechanism is pretty straightforward. Finally BAR also
+        provides low end-to-end latency for real time communications, as other
+        networks.</p>
+
+        <p>On the other hand, note that BAR requires additional communication bandwidth
+        from each user. In short, within BAR you can gain stronger anonymity against
+        attacks which are known to be effective in other anonymity networks, but this
+        will cost you a few Mbps of your bandwidth.</p>
+
+        <h3>Can i use it?</h3>
+        <p>There is a minimal implementation of BAR on Github serving as a
+        proof of concept. You can use it at your own risk. Installation notes lie here.</p>
+        <h3>I want to help!</h3>
+        <p>Your help is very welcomed! We continuously have a need for testers,
+        reviewers and developers. Don't hesitate to reach us.</p>
+
+    </div>
+    <div id="footer">
+    </div>
+</div>
+</body>
+</html>
