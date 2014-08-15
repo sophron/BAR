@@ -50,11 +50,11 @@ class CommunicatorProtocol(NetstringReceiver):
             print "Received feed."
             message = Message(data)
             row = db.select_entries("contacts", {"label": message.label})
-            if len(row) != 0:
+            if len(row) == 0:
                 print "Can't find this label: " + message.label
                 return
             row = row[0]
-            message.decrypt(row.shared_key)
+            message.decrypt(row["sharedkey"])
             if not message.validate():
                 print "Received an invalid message."
                 return
@@ -63,14 +63,14 @@ class CommunicatorProtocol(NetstringReceiver):
                 if self.factory.listener_factory:
                     self.factory.listener_factory.send_message(message.cleartext_msg)
                     self.factory.listener_factory.client.transport.loseConnection()
-                    db.insert_entry(self.factory.name, message.new_label, row[4])
+                    db.insert_entry("contacts", {"name": self.factory.name, "label":message.new_label, "sharedkey": row["sharedkey"]})
             else:
                 if self.factory.role == "proxy":
                     message.cleartext_msg = re.sub(r'CONNECT (?P<value>.*?) HTTP/1.0\r\n', 'CONNECT localhost HTTP/1.0\r\n', message.cleartext_msg)
                 socks_client_factory = HTTPClientFactory(reactor, message)
                 socks_client_factory.set_communicator(self)
                 reactor.connectTCP("localhost", 4333, socks_client_factory)
-                db.insert_entry(self.factory.name, message.new_label, row[4])
+                db.insert_entry("contacts", {"name": self.factory.name, "label":message.new_label, "sharedkey": row["sharedkey"]})
 
     def stringReceived(self, data):
         for op in self.operations:
@@ -109,10 +109,13 @@ class CommunicatorFactory(ClientFactory):
 class ListenerProtocol(Protocol):
 
     def dataReceived(self, data):
-        contact = db.select_entry("name", self.factory.communicator_factory.name)
+        contact = db.select_entries("contacts", {"name": self.factory.communicator_factory.name})
+        if len(contact) == 0:
+            return
+        contact = contact[0]
         newlabel = label.gen_lbl()
         if contact:
-            self.factory.communicator_factory.send_broadcast_request(contact[2], contact[4], newlabel, data)
+            self.factory.communicator_factory.send_broadcast_request(contact['label'], contact['sharedkey'], newlabel, data)
         return
 
     def connectionMade(self):
@@ -136,9 +139,12 @@ class ListenerFactory(ServerFactory):
 class HTTPClientProtocol(Protocol):
 
     def dataReceived(self, data):
-        contact = db.select_entry("name", self.factory.communicator_factory.factory.name)
+        contact = db.select_entries("contacts", {"name": self.factory.communicator_factory.factory.name})[0]
+        if len(contact) == 0:
+            return
+        contact = contact[0]
         more_new_label = label.gen_lbl()
-        self.factory.communicator_factory.factory.send_broadcast_request(self.factory.message.label, contact[4], more_new_label, data)
+        self.factory.communicator_factory.factory.send_broadcast_request(self.factory.message.label, contact['sharedkey'], more_new_label, data)
 
     def connectionMade(self):
         self.factory.clientConnectionMade(self)
@@ -180,7 +186,7 @@ def daemon_main(name, role):
         port = reactor.listenTCP(4333, ProxyFactory())
 
     print "Starting reactor..."
-    reactor.connectTCP("199.19.117.60", 231, communicator_factory)
+    reactor.connectTCP("83.212.169.68", 231, communicator_factory)
     print 'Listening on %s.' % (port.getHost())
     reactor.run()
 
