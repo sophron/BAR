@@ -45,7 +45,7 @@ class BARServerProtocol(NetstringReceiver):
 class BARServerFactory(ServerFactory):
     protocol = BARServerProtocol
 
-def main():
+def server_main():
     factory = BARServerFactory()
     port = reactor.listenTCP(231, factory,
                              #interface=socket.gethostbyaddr(socket.gethostbyname(socket.gethostname()))[2][0])
@@ -54,4 +54,4 @@ def main():
     reactor.run()
 
 if __name__ == '__main__':
-    main()
+    server_main()

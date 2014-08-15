@@ -6,6 +6,7 @@ import sqlite3 as lite
 from Crypto import Random
 from bar.network.client import send_broadcast_message
 from bar.network.bar_daemon import daemon_main
+from bar.network.bar_server import server_main
 
 def parse_cli():
     '''
@@ -98,9 +99,11 @@ def start_server(args):
 
     print "Starting server..."
 
-    server_pid = start_process("bar/network/bar-server.py")
-    if server_pid:
-        print "Bar server started."
+    server_main()
+
+    #server_pid = start_process("bar/network/bar-server.py")
+    #if server_pid:
+    #    print "Bar server started."
 
 def stop_server(args):
     '''
