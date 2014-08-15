@@ -18,7 +18,9 @@ from twisted.internet import reactor
 from bar.common.message import Message
 import bar.common.label as label
 import bar.common.aes as aes
-import bar.common.db as db
+from bar.common.db import Bardb
+
+db = Bardb()
 
 class CommunicatorProtocol(NetstringReceiver):
 
@@ -47,11 +49,12 @@ class CommunicatorProtocol(NetstringReceiver):
     def received_broadcast(self, data):
             print "Received feed."
             message = Message(data)
-            row = db.select_entry("label", message.label)
-            if not row:
+            row = db.select_entries("contacts", {"label": message.label})
+            if len(row) != 0:
                 print "Can't find this label: " + message.label
-                return 
-            message.decrypt(row[4])
+                return
+            row = row[0]
+            message.decrypt(row.shared_key)
             if not message.validate():
                 print "Received an invalid message."
                 return
@@ -182,4 +185,4 @@ def daemon_main(name, role):
     reactor.run()
 
 if __name__ == '__main__':
-    daemon_main()
+    daemon_main("foo", "hidden-client")
