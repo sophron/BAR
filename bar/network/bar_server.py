@@ -2,6 +2,7 @@ import os
 import time
 import socket
 import sys
+import urllib2
 import sqlite3 as lite
 from twisted.internet import defer, reactor
 from twisted.internet.protocol import ServerFactory, ClientFactory, Protocol
@@ -48,7 +49,7 @@ def server_main():
     factory = BARServerFactory()
     port = reactor.listenTCP(231, factory,
                              #interface=socket.gethostbyaddr(socket.gethostbyname(socket.gethostname()))[2][0])
-                            interface='192.168.1.2')
+                            interface=urllib2.urlopen('http://ip.42.pl/raw').read())
     print 'Serving on %s.' % (port.getHost())
     reactor.run()
 
