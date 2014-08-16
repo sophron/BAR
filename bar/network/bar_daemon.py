@@ -166,7 +166,7 @@ class HTTPClientFactory(ClientFactory):
 class ProxyFactory(http.HTTPFactory):
 	protocol = proxy.Proxy
 
-def daemon_main(name, role):
+def daemon_main(name, role, server):
 
     #parser = argparse.ArgumentParser(description='bar-daemon')
     #parser.add_argument('--name', default=False, help='Label of contact')
@@ -186,7 +186,7 @@ def daemon_main(name, role):
         port = reactor.listenTCP(4333, ProxyFactory())
 
     print "Starting reactor..."
-    reactor.connectTCP("83.212.169.68", 231, communicator_factory)
+    reactor.connectTCP(server, 231, communicator_factory)
     print 'Listening on %s.' % (port.getHost())
     reactor.run()
 

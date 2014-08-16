@@ -27,6 +27,7 @@ def parse_cli():
 
     login_parser.add_argument('--name', default=False, help='Name of contact')
     login_parser.add_argument('--role', default=False, help='Role of BAR client')
+    login_parser.add_argument('--server', default=False, help='BAR server to connect')
 
     subparsers = server_parser.add_subparsers(help='sub-command help', dest='server_operation')
 
@@ -124,16 +125,20 @@ def login(args):
     '''
 
     if not args.name:
-        print "You need to specify a name with --name."
+        print "You need to specify a name with --name. Aborting..."
         return
 
     if args.role not in ("hidden-service", "hidden-client", "proxy"):
         print "role has to be either 'hidden-service' or 'hidden-client' or 'proxy'"
         return
 
+    if not args.server:
+        print "You need to specify the IP address of a BAR server to connect. Aborting..." 
+        return
+
     print "Starting daemon..."
     
-    daemon_main(args.name, args.role)
+    daemon_main(args.name, args.role, args.server)
 
     #pid = start_process("bar/network/bar-daemon.py", args)
     #if pid:
