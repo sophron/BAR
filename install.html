@@ -1,0 +1,148 @@
+<html>
+<head>
+<style>
+
+body {
+    background-color: #f7f7f7;
+}
+
+h1 {
+    font-family: 'Ubuntu',sans-serif;
+    font-weight: 700;
+    color: #383838;
+    font-size: 200%;
+    margin-bottom: 50px;
+}
+
+h3 {
+    font-family: 'Ubuntu',sans-serif;
+    font-weight: 700;
+    color: #383838;
+}
+
+p, li, table {
+    font-family: "Helvetica Neue","Helvetica",Arial,sans-serif;
+    font-size: 16px;
+    color: #646464;
+}
+
+td {   
+    padding-right: 20px;
+}
+
+#content {
+    margin-left: auto;
+    margin-right: auto;
+    width: 800px;
+    padding: 30px 40px 40px 40px;
+    text-align: justify;
+    background-color: #fff;
+    min-height: 400px;
+    border: 2px solid #ebebeb;
+    -webkit-border-radius: 6px;
+    -moz-border-radius: 6px;
+    border-radius: 6px;
+}
+
+#content h1, img {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+}
+
+#content img {
+    padding-top: 15px;
+    padding-bottom: 50px;
+}
+
+.code {
+    -webkit-border-radius: 7px;
+    -moz-border-radius: 7px;
+    border-radius: 7px;
+    padding: 7px 7px 7px 7px;
+    text-align: left;
+    width: 400px;
+    background-color: #eee;
+    color: #D43533;
+}
+
+a {
+    color: #D14747;
+}
+
+</style>
+</head>
+<body>
+<div id="wrapper">
+    <div id="content">
+        <div id="header"><img src="bar-logo-2.png"></img></div>
+        <h1>BAR installation notes</h1>
+
+        <p>These are the installation notes for BAR software. If you don't know
+        what is it about, check the page <a href="/index.html">here</a> first.
+        The code is released under the modified BSD licence and lies <a href="https://github.com/sophron/BAR">here</a>.</p>
+
+        <p>Please, note that the software described here is still in Alpha state
+        of development. <b>You should not use it for real anonymity over TCP/IP.</b></p>
+        <p>
+
+        <p>We set up an infrastructure with a BAR server and a BAR hidden
+        HTTP service for anyone willing to test it out. Since the authenticated exchange
+        part of the protocol is not yet implemented, please note that you can't verify
+        a hidden service's identity in the current phase.</p>
+
+        <table>
+        <tr><td>BAR server:</td><td>83.212.169.68</td></tr>
+        <tr><td>Hidden service label:</td><td>9240aaebd1451db5a6284ebce0bdfec4</td></tr>
+        <tr><td>Hidden service shared key:</td><td>1d8be2a6b0d3b886e549efab44985700</td></tr>
+        </table>
+
+        <h3>Run a BAR client</h3>
+        <ol>
+        <li>Clone the repository. <p class="code">git clone https://github.com/sophron/BAR.git</p></li>
+        <li>Change directory to BAR. <p class="code">cd BAR</p></li>
+        <li>Install BAR and dependencies. <p class="code">sudo python setup.py install</p></li>
+        <li>Add the hidden service you wish to contact:
+         <p class="code">python bin/bar contacts add --name a-service-name --label 9240aaebd1451db5a6284ebce0bdfec4 --sharedkey 1d8be2a6b0d3b886e549efab44985700</p></li>
+        <li>Login to BAR server: <p class="code">python bin/bar login --name a-service-name --role hidden-client --server 83.212.169.68</p></li>
+        <li>Configure your browser to use BAR. For instance, in Firefox, go to Edit -> Preferences -> Advanced -> Settings -> Manual proxy configuration. You want to enable HTTP proxy and make it connect localhost on port 4333.</li> <br />
+        <li>Use the browser to connect to the hidden service, for example type http://hiddenservice.bar/ and press Enter.</li>
+        </ol>
+
+        <h3>Run a BAR hidden service</h3>
+
+        <ol>
+        <li>Clone the repository. <p class="code">git clone https://github.com/sophron/BAR.git</p></li>
+        <li>Change directory to BAR. <p class="code">cd BAR</p></li>
+        <li>Install BAR and dependencies. <p class="code">sudo python setup.py install</p></li>
+        <li>Add the hidden client you wish to contact you:
+         <p class="code">python bin/bar contacts add --name my-service --label 9240aaebd1451db5a6284ebce0bdfec4 --sharedkey 1d8be2a6b0d3b886e549efab44985700</p></li>
+        <li>Make your service available only via localhost. For example, in
+        Apache HTTP server, your vhost should look like this:
+        <p class="code">
+        &lt;VirtualHost 127.0.0.1:80&gt;<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;ServerName hiddenservice.bar<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;DocumentRoot /var/www/hidden-service-bar<br />
+        &lt;/VirtualHost&gt;
+        </p>
+</p></li>
+        <li>Set the DNS record locally. For instance, add the following entry to /etc/hosts. 
+        <p class="code">127.0.0.1       hiddenservice.bar</p></li>
+        <li>Login to BAR server: <p class="code">python bin/bar login --name my-service --role hidden-client --server 83.212.169.68</p></li>
+        </ol>
+
+        <h3>Run a BAR server</h3>
+        <ol>
+        <li>Clone the repository. <p class="code">git clone https://github.com/sophron/BAR.git</p></li>
+        <li>Change directory to BAR. <p class="code">cd BAR</p></li>
+        <li>Install BAR and dependencies. <p class="code">sudo python setup.py install</p></li>
+        <li>Bind BAR server on port 231. <p class="code">sudo python bin/bar server start</p></li>
+        </ol>
+
+    </div>
+    <div id="footer">
+    </div>
+</div>
+</body>
+</html>
