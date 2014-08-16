@@ -139,7 +139,7 @@ class ListenerFactory(ServerFactory):
 class HTTPClientProtocol(Protocol):
 
     def dataReceived(self, data):
-        contact = db.select_entries("contacts", {"name": self.factory.communicator_factory.factory.name})[0]
+        contact = db.select_entries("contacts", {"name": self.factory.communicator_factory.factory.name})
         if len(contact) == 0:
             return
         contact = contact[0]
