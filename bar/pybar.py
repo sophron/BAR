@@ -4,7 +4,6 @@
 import sys, os, argparse, subprocess, signal
 import sqlite3 as lite
 from Crypto import Random
-from bar.network.client import send_broadcast_message
 from bar.network.bar_daemon import daemon_main
 from bar.network.bar_server import server_main
 
