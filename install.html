@@ -87,10 +87,7 @@ a {
         of development. <b>You should not use it for real anonymity over TCP/IP.</b></p>
         <p>
 
-        <p>We set up an infrastructure with a BAR server and a BAR hidden
-        HTTP service for anyone willing to test it out. Since the authenticated exchange
-        part of the protocol is not yet implemented, please note that you can't verify
-        a hidden service's identity in the current phase.</p>
+        <p>In our guidelines we assume the following setup:</p>
 
         <table>
         <tr><td>BAR server:</td><td>83.212.169.68</td></tr>
@@ -129,7 +126,7 @@ a {
 </p></li>
         <li>Set the DNS record locally. For instance, add the following entry to /etc/hosts. 
         <p class="code">127.0.0.1       hiddenservice.bar</p></li>
-        <li>Login to BAR server: <p class="code">python bin/bar login --name my-service --role hidden-client --server 83.212.169.68</p></li>
+        <li>Login to BAR server: <p class="code">python bin/bar login --name my-service --role hidden-service --server 83.212.169.68</p></li>
         </ol>
 
         <h3>Run a BAR server</h3>
